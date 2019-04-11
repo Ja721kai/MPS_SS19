@@ -5,7 +5,7 @@
  *      Author: Admin
  */
 
-#include "..\base.h"
+#include "base.h"
 
 // Ein Ereignis (Event) ist eine Änderung einer (physikalischen) Größe,
 // die für das System relevant ist und auf die das System reagieren sollte.
