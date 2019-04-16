@@ -28,7 +28,7 @@ GLOBAL Void set_blink_muster(UInt arg)
      */
 
     muster = arg;
-    counter = 1;
+    counter = 0;
 
 }
 
@@ -63,8 +63,11 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 250)
             {
                 counter = 0;
+                set_event(EVENT_BTN1);
+                __low_power_mode_off_on_exit();
             }
         }
+
         break;
     case 1:
         if (counter < 75)
@@ -79,6 +82,8 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 150)
             {
                 counter = 0;
+                set_event(EVENT_BTN1);
+                __low_power_mode_off_on_exit();
             }
         }
         break;
@@ -95,6 +100,8 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 50)
             {
                 counter = 0;
+                set_event(EVENT_BTN1);
+                __low_power_mode_off_on_exit();
             }
         }
         break;
@@ -111,6 +118,8 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 250)
             {
                 counter = 0;
+                set_event(EVENT_BTN1);
+                __low_power_mode_off_on_exit();
             }
         }
         break;
@@ -137,6 +146,8 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 350)
             {
                 counter = 0;
+                set_event(EVENT_BTN1);
+                __low_power_mode_off_on_exit();
             }
         }
         break;
@@ -173,6 +184,8 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 450)
             {
                 counter = 0;
+                set_event(EVENT_BTN1);
+                __low_power_mode_off_on_exit();
             }
         }
         break;
