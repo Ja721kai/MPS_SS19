@@ -19,15 +19,13 @@
 static Char muster = 0;
 static Short counter = 0;
 
+
+
 const Char n = 6;
 const Char num_buttons = 2;  // Button 1 und 2
 const Char num_button_states = 2;  // State, Cnt (Folie 45)
-//static Bool states[2] = {0, 1};
-static Char buttons[num_buttons][num_button_states] = { 0 };
-static Char* ptr_state1 = &buttons[0][0];
-static Char* ptr_cnt1 = &buttons[0][1];
-static Char* ptr_state2 = &buttons[1][0];
-static Char* ptr_cnt2 = &buttons[1][1];
+static Bool states[2] = {0, 1};
+static Char cnt[6] = {0, 1, 2, 3, 4, 5};
 
 
 GLOBAL Void set_blink_muster(UInt arg)
@@ -66,59 +64,67 @@ GLOBAL Void TA0_Init(Void)
 __interrupt Void TA0_ISR(Void)
 {
 
-    Int btn1 = TSTBIT(P1IN, BIT1);
-    Int btn2 = TSTBIT(P1IN, BIT0);
+    static Bool btn1;
+    static Bool btn2;
 
-    char cnt = *ptr_cnt1;
+    static Bool* ptr_state1 = &states[0];
+    static Char* ptr_cnt1 = &cnt[0];
+    static Bool* ptr_state2 = &states[0];
+    static Char* ptr_cnt2 = &cnt[0];
+
+    btn1 = TSTBIT(P1IN, BIT1);
+    btn2 = TSTBIT(P1IN, BIT0);
 
     /*Hysterese*/
     if (btn1)
     {
-        if (*ptr_cnt1 == n - 1 && *ptr_state1 != 1)
+        if (*ptr_cnt1 == n - 1 && *ptr_state1 == 0)
         {
-            *ptr_state1 = 1;
-            set_event(EVENT_BTN1);
+            ptr_state1++;
+            if (!tst_event(EVENT_BTN1)) {
+                set_event(EVENT_BTN1);
+            }
         }
-        if (*ptr_cnt1 == 0)
+        if (*ptr_cnt1 == 0  && *ptr_state1 == 1)
         {
-            *ptr_state1 = 0;
+            ptr_state1--;
         }
         if (*ptr_cnt1 < n - 1)
         {
-            *ptr_cnt1 = *ptr_cnt1 + 1;
+            ptr_cnt1++;
         }
     }
     else
     {
         if (*ptr_cnt1 > 0)
         {
-            *ptr_cnt1 = *ptr_cnt1 - 1;
+            ptr_cnt1--;
         }
     }
 
     /*Hysterese Button2*/
     if (btn2)
     {
-        if (*ptr_cnt2 == n - 1 && *ptr_state2 != 1)
+        if (*ptr_cnt2 == n - 1 && *ptr_state2 == 0)
         {
-            *ptr_state2 = 1;
+            ptr_state2++;
             set_event(EVENT_BTN2);
             __low_power_mode_off_on_exit();
         }
-        if (*ptr_cnt2 == 0)
+        if (*ptr_cnt2 == 0 && *ptr_state2 == 1)
         {
-            *ptr_state2 = 0;
+            ptr_state2--;
         }
         if (*ptr_cnt2 < n - 1)
         {
-            *ptr_cnt2 = *ptr_cnt2 + 1;
+            ptr_cnt2++;
         }
     }
     else
     {
         if (*ptr_cnt2 > 0)
         {
-            *ptr_cnt2 = *ptr_cnt2 - 1;
+            ptr_cnt2--;
         }
     }
 
