@@ -5,7 +5,6 @@
  *      Author: Admin
  */
 
-
 #include <msp430.h>
 #include "base.h"
 #include "event.h"
@@ -62,20 +61,24 @@ GLOBAL Void SPI_Init(Void) {
 
 // der Treiberbaustein AS1108 ist hier über die SPI-Schnittstelle zu initialisieren
 GLOBAL Void AS1108_Init(Void) {
+
     AS1108_Write(0x0C, 0x01);  // reset feature register to default setting
-    AS1108_Write(0x0C, 0x81);  // enter operation mode with default register
-
-    //AS1108_Write(adr, arg);  // set brightness to xx
-
-    AS1108_Write(0x0B, 0x03);  // display all digits (0x03)
-
-    AS1108_Write(0x09, 0xFF);  // decode mode, B-/HEX for all digits
 
     // set all 4 digits to ZERO
     AS1108_Write(0x01, 0x00);
     AS1108_Write(0x02, 0x00);
     AS1108_Write(0x03, 0x00);
     AS1108_Write(0x04, 0x00);
+
+    AS1108_Write(0x09, 0xFF);  // decode mode, B-/HEX for all digits
+
+    AS1108_Write(0x0A, 0x03);  // set brightness to maximum brightness
+
+    AS1108_Write(0x0B, 0x03);  // display all digits (0x03)
+
+    AS1108_Write(0x0C, 0x81);  // enter operation mode with default register
+
+    //AS1108_Write(0x0F, 0x01);  // display test mode
 }
 
 // ----------------------------------------------------------------------------

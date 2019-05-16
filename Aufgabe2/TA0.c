@@ -66,14 +66,18 @@ __interrupt Void TA0_ISR(Void)
 
     static Bool btn1;
     static Bool btn2;
+    static Bool btn3;
 
     static Bool* ptr_state1 = &states[0];
     static Char* ptr_cnt1 = &cnt[0];
     static Bool* ptr_state2 = &states[0];
     static Char* ptr_cnt2 = &cnt[0];
+    static Bool* ptr_state3 = &states[0];
+    static Char* ptr_cnt3 = &cnt[0];
 
     btn1 = TSTBIT(P1IN, BIT1);
     btn2 = TSTBIT(P1IN, BIT0);
+    btn3 = TSTBIT("PIN", "BIT");
 
     /*Hysterese*/
     if (btn1)
@@ -127,6 +131,31 @@ __interrupt Void TA0_ISR(Void)
             ptr_cnt2--;
         }
     }
+    if (btn3)
+        {
+            if (*ptr_cnt3 == n - 1 && *ptr_state3 == 0)
+            {
+                ptr_state3++;
+                /*set_event(EVENT_BTN3);
+                __low_power_mode_off_on_exit();*/
+                SETBIT(P1OUT, BIT2);  // Error LED for button testing
+            }
+            if (*ptr_cnt3 == 0 && *ptr_state3 == 1)
+            {
+                ptr_state3--;
+            }
+            if (*ptr_cnt3 < n - 1)
+            {
+                ptr_cnt3++;
+            }
+        }
+        else
+        {
+            if (*ptr_cnt3 > 0)
+            {
+                ptr_cnt3--;
+            }
+        }
 
     switch (muster)
     {
