@@ -8,10 +8,6 @@
  * main.c
  */
 
-/*
- * TODO
- * In TA0.c Testfunktionalität für BTN3 ausprobieren und korrekten PIN herausfinden!
- */
 
 LOCAL Void CS_Init(Void);
 LOCAL Void Port_Init(Void);

@@ -21,10 +21,13 @@ typedef enum
 {
     S0, S1, S2, S3, S4, S5
 } SegState;
-LOCAL int digits[4] = {4, 3, 2, 1};
+
+//typedef Void (* VoidFunc)(Void);
+
+LOCAL int digits[4] = { 4, 3, 2, 1 };
 LOCAL int selectedValue = 0;
 LOCAL int currentValue = 0;
-LOCAL int displayedValue[4] = {0, 0, 0, 0};
+LOCAL int displayedValue[4] = { 0, 0, 0, 0 };
 GLOBAL Bool mode = 1;  // mode 1 -> increment, mode 0 -> decrement
 
 LOCAL Void AS1108_Write(UChar adr, UChar arg)
@@ -78,10 +81,10 @@ GLOBAL Void AS1108_Init(Void)
     AS1108_Write(0x0C, 0x01);  // reset feature register to default setting
 
     /* set digits to "HEHE"
-    AS1108_Write(0x03, 0x0B);
-    AS1108_Write(0x04, 0x0C);
-    AS1108_Write(0x01, 0x0B);
-    AS1108_Write(0x02, 0x0C);*/
+     AS1108_Write(0x03, 0x0B);
+     AS1108_Write(0x04, 0x0C);
+     AS1108_Write(0x01, 0x0B);
+     AS1108_Write(0x02, 0x0C);*/
 
     AS1108_Write(0x03, 0x00);
     AS1108_Write(0x04, 0x00);
@@ -146,16 +149,21 @@ GLOBAL Void Number_Handler(Void)
     {
         clr_event(EVENT_10);
 
-        if(mode) {
-            currentValue += selectedValue; // TODO: Implement calculation
-        } else {
+        if (mode)
+        {
+            currentValue += selectedValue;
+        }
+        else
+        {
             currentValue -= selectedValue;
         }
         // handle overflow:
-        if(currentValue GE 10000) {
+        if (currentValue GE 10000)
+        {
             currentValue -= 10000;
         }
-        if (currentValue LT 0) {
+        if (currentValue LT 0)
+        {
             currentValue += 10000;
         }
 
@@ -176,38 +184,65 @@ GLOBAL Void AS1108_Handler(Void)
     // TODO: Implement states with function pointers
     static SegState state = S0;
     static int digit;
-    static char ch;
+    static char ch;  // warning is fine, only used for dummy reads
+    static Bool jump_to_S3;
 
     switch (state)
     {
-    case(S0):
-        if(tst_event(EVENT_11)) {
-            digit = 0x01;  // initialize with index at digit 0x04
+    case (S0):  // init if EVENT_11
+        if (tst_event(EVENT_11))
+        {
+            jump_to_S3 = 0;
+            digit = 0x01;  // initialize with index at digit 0x01
             state = S1;
         }
         break;
-    case(S1):
-        // set digit:  (implement this routine into different states later on
+    case (S1):
         ch = UCA1RXBUF;   // dummy read, UCRXIFG := 0, UCOE := 0
         CLRBIT(P2OUT, BIT3);  // Select aktivieren
         UCA1TXBUF = digit;       // Adresse ausgeben
-        while (TSTBIT(UCA1IFG, UCRXIFG) EQ 0)
-            ;
+        state = S4;
+        break;
+
+    case (S2):  // write data
         ch = UCA1RXBUF;        // dummy read
-        UCA1TXBUF = displayedValue[digit-1];       // Datum ausgeben
-        while (TSTBIT(UCA1IFG, UCRXIFG) EQ 0)
-            ;
+        UCA1TXBUF = displayedValue[digit - 1];   // Datum ausgeben
+        jump_to_S3 = 1;
+        state = S4;
+        break;
+
+    case (S3):  // check if done
         ch = UCA1RXBUF;        // dummy read
         SETBIT(P2OUT, BIT3);  // Select deaktivieren
         digit++;
-        if(digit EQ 0x05) {
+        if (digit EQ 0x05)
+        {
             clr_event(EVENT_11);
             state = S0;
         }
+        else
+        {
+            state = S1;
+        }
+        break;
+
+    case (S4):
+        if (TSTBIT(UCA1IFG, UCRXIFG) NE 0)
+        {
+            if (jump_to_S3)
+            {
+                state = S3;
+                jump_to_S3 = 0;
+            }
+            else
+            {
+                state = S2;
+            }
+        }
         break;
     default:
-            break;
-}
+        break;
+    }
 
 }
 
