@@ -8,7 +8,6 @@
  * main.c
  */
 
-
 LOCAL Void CS_Init(Void);
 LOCAL Void Port_Init(Void);
 
@@ -41,9 +40,12 @@ GLOBAL Void main(Void) {
 
       // wenn die drei Handler korrekt implementiert sind,
       // kann man ihre Reihnefolge hier beliebig ändern
-      Button_Handler();
-      Number_Handler();
       AS1108_Handler();
+      Number_Handler();
+      Button_Handler();
+      AS1108_Handler();
+      Number_Handler();
+      Button_Handler();
 
       // im Falle eines Event-Errors leuchtet die LED dauerhaft
       if (is_event_error()) {
