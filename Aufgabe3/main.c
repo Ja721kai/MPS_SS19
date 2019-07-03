@@ -3,6 +3,7 @@
 #include "TA0.h"
 #include "event.h"
 #include "AS1108.h"
+#include "UCA0.h"
 
 /**
  * main.c
@@ -12,7 +13,6 @@ LOCAL Void CS_Init(Void);
 LOCAL Void Port_Init(Void);
 
 GLOBAL Void main(Void) {
-   Int cnt = 0;
    // stop watchdog timer
    WDTCTL = WDTPW + WDTHOLD;
 
@@ -20,30 +20,35 @@ GLOBAL Void main(Void) {
    Port_Init();   // set up LED ports
    SPI_Init();
    TA0_Init();    // set up BTN Ports and Timer A0
-   UART_Init();   // set up UART Ports and baudrate
+   UCA0_Init();   // set up UART Ports and baudrate
 
    AS1108_Init();
 
    while(TRUE) {
       wait_for_event();
 
-      if (tst_event(EVENT_BTN1)) {
-         clr_event(EVENT_BTN1);
-         if (++cnt GT MUSTER6) {
-            cnt = 0;
-         }
-         set_blink_muster(cnt);
+      if (tst_event(EVENT_ERROR)) {
+          clr_event(EVENT_ERROR);
+          set_blink_muster();
       }
+
       if (tst_event(EVENT_BTN2)) {
          clr_event(EVENT_BTN2);
          TGLBIT(P2OUT, BIT7);
       }
 
+      if (tst_event(EVENT_RXD)) {
+          clr_event(EVENT_RXD);
+          set_event(EVENT_INPUT);
+      }
+      if (tst_event(EVENT_TXD)) {
+          clr_event(EVENT_TXD);
+          UCA0_printf(buf);
+      }
+
+
       // wenn die drei Handler korrekt implementiert sind,
       // kann man ihre Reihnefolge hier beliebig ändern
-      AS1108_Handler();
-      Number_Handler();
-      Button_Handler();
       AS1108_Handler();
       Number_Handler();
       Button_Handler();

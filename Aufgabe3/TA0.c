@@ -9,6 +9,7 @@
 #include "base.h"
 #include "TA0.h"
 #include "event.h"
+#include "AS1108.h"
 
 /*
  * Man soll sich geeignete Datenstrukturen überlegen,
@@ -25,14 +26,36 @@ const Char num_button_states = 2;  // State, Cnt (Folie 45)
 static Bool states[2] = { 0, 1 };
 static Char cnt[6] = { 0, 1, 2, 3, 4, 5 };
 
-GLOBAL Void set_blink_muster(UInt arg)
+GLOBAL Void set_blink_muster()
 {
     /*
      * Die Funktion muss so erweitert werden,
      * dass ein Blinkmuster selektiert wird.
      */
-    muster = arg;
     counter = 0;
+    if(tst_error(ERR_ERROR)) {
+        muster = 4;
+        return;
+    }
+
+    if(tst_error(BUF_ERROR)) {
+        muster = 3;
+        return;
+    }
+
+    if(tst_error(CHAR_ERROR)) {
+        muster = 2;
+        return;
+    }
+
+    if(tst_error(BRK_ERROR)) {
+        muster = 1;
+        return;
+    }
+
+    if(tst_error(NO_ERRORS)) {
+        muster = 0;
+    }
 
 }
 
@@ -61,15 +84,12 @@ GLOBAL Void TA0_Init(Void)
 __interrupt Void TA0_ISR(Void)
 {
 
-    static Bool btn1;
     static Bool btn2;
     static Bool btn3;
     static Bool btn4;
     static Bool btn5;
     static Bool btn6;
 
-    static Bool* ptr_state1 = &states[0];
-    static Char* ptr_cnt1 = &cnt[0];
     static Bool* ptr_state2 = &states[0];
     static Char* ptr_cnt2 = &cnt[0];
     static Bool* ptr_state3 = &states[0];
@@ -81,42 +101,11 @@ __interrupt Void TA0_ISR(Void)
     static Bool* ptr_state6 = &states[0];
     static Char* ptr_cnt6 = &cnt[0];
 
-    btn1 = TSTBIT(P1IN, BIT1);
     btn2 = TSTBIT(P1IN, BIT0);
     btn3 = TSTBIT(P3IN, BIT0);
     btn4 = TSTBIT(P3IN, BIT1);
     btn5 = TSTBIT(P3IN, BIT2);
     btn6 = TSTBIT(P3IN, BIT3);
-
-    /*Hysterese*/
-    /* Button 1 ohne Funktion in Aufgabe 3
-    if (btn1)
-    {
-        if (*ptr_cnt1 == n - 1 && *ptr_state1 == 0)
-        {
-            ptr_state1++;
-            if (!tst_event(EVENT_BTN1))
-            {
-                set_event(EVENT_BTN1);
-            }
-        }
-        if (*ptr_cnt1 == 0 && *ptr_state1 == 1)
-        {
-            ptr_state1--;
-        }
-        if (*ptr_cnt1 < n - 1)
-        {
-            ptr_cnt1++;
-        }
-    }
-    else
-    {
-        if (*ptr_cnt1 > 0)
-        {
-            ptr_cnt1--;
-        }
-    }
-    */
 
     /*Hysterese Button2*/
     if (btn2)
@@ -243,7 +232,7 @@ __interrupt Void TA0_ISR(Void)
 
     switch (muster)
     {
-    case 0:                         // Muster 1: 2s/0.5s
+    case 0:                         // Unterbrochenes Licht, kein Fehler
         if (counter < 200)
         {
             SETBIT(P1OUT, BIT2);
@@ -261,24 +250,7 @@ __interrupt Void TA0_ISR(Void)
         }
 
         break;
-    case 1:
-        if (counter < 75)
-        {
-            SETBIT(P1OUT, BIT2);
-            counter++;
-        }
-        else
-        {
-            CLRBIT(P1OUT, BIT2);
-            counter++;
-            if (counter == 150)
-            {
-                counter = 0;
-                __low_power_mode_off_on_exit();
-            }
-        }
-        break;
-    case 2:
+    case 1:                         // schnelles Gleichtaktlicht, Break Detect
         if (counter < 25)
         {
             SETBIT(P1OUT, BIT2);
@@ -295,7 +267,7 @@ __interrupt Void TA0_ISR(Void)
             }
         }
         break;
-    case 3:
+    case 2:                         // 1 x Blinken, Character Error
         if (counter < 50)
         {
             SETBIT(P1OUT, BIT2);
@@ -312,7 +284,7 @@ __interrupt Void TA0_ISR(Void)
             }
         }
         break;
-    case 4:
+    case 3:                         // 2x Blinken, Buffer Error
         if (counter < 50)
         {
             SETBIT(P1OUT, BIT2);
@@ -339,7 +311,7 @@ __interrupt Void TA0_ISR(Void)
             }
         }
         break;
-    case 5:
+    case 4:                         // 3x Blinken, Framing / Overrun / Parity Error
         if (counter < 50)
         {
             SETBIT(P1OUT, BIT2);

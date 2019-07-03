@@ -9,6 +9,7 @@
 #include "base.h"
 #include "event.h"
 #include "AS1108.h"
+#include "UCA0.h"
 
 // Basis des Zahlensystems
 // Einstellung zwischen 2 und 10 soll möglich sein
@@ -22,14 +23,38 @@
 
 typedef Void (* VoidFunc)(Void);
 
+GLOBAL int currentValue;
+LOCAL const Char * ptr;
+
+//GLOBAL char error_code = 0x01;  // bit-sequence  00001 -> no error
+LOCAL volatile TEvent error_code  = NO_ERRORS;
+
+LOCAL Bool setVal = 0;
 LOCAL unsigned int selectedValue = 0;
 LOCAL unsigned char displayedValue[4] = { 0, 0, 0, 0 };
 GLOBAL Bool mode = 1;  // mode 1 -> increment, mode 0 -> decrement
+
 
 LOCAL unsigned char digit;
 LOCAL char ch;  // warning is fine, only used for dummy reads
 LOCAL Bool jump_to_S3;
 LOCAL VoidFunc state = State0;
+
+#pragma FUNC_ALWAYS_INLINE(set_error)
+GLOBAL Void set_error(TEvent arg) {
+   SETBIT(error_code, arg);
+}
+
+#pragma FUNC_ALWAYS_INLINE(clr_error)
+GLOBAL Void clr_error() {
+   error_code = NO_ERRORS;
+}
+
+#pragma FUNC_ALWAYS_INLINE(tst_error)
+GLOBAL Bool tst_error(TEvent arg) {
+   return TSTBIT(error_code, arg);
+}
+
 
 LOCAL Void AS1108_Write(UChar adr, UChar arg)
 {
@@ -139,34 +164,93 @@ GLOBAL Void Button_Handler(Void)
         selectedValue = BASE_POW3;
         set_event(EVENT_10); // Handler 2 Event
     }
+    //LOCAL Char ch;
+    LOCAL Int factor;
+    if (tst_event(EVENT_INPUT))
+    {
+        clr_event(EVENT_INPUT);
+        selectedValue = 0;
+        factor = BASE_POW3;
+        ptr = buf;
+        while (!(factor EQ 0))
+        {
+            ch = *ptr++;
+            if (between(0x30, ch, 0x39))
+            {
+                selectedValue += ((int) ch - 48) * factor;  // TODO: maybe wrong conversion
+                factor /= BASE;
+            } else {
+                if(ch NE '\0') {
+                    set_error(CHAR_ERROR); // character error
+                    set_event(EVENT_ERROR);
+                } else {
+                    set_error(BUF_ERROR); // buffer error, end of text reached too early
+                    set_event(EVENT_ERROR);
+                }
+                break;
+            }
+        }
+        if(!(factor EQ 0 AND *ptr EQ '\0')) {
+            selectedValue = 0;
+            if (*ptr NE '\0') {
+                set_error(BUF_ERROR); // buffer error, end of text not reached because of too many digits
+                set_event(EVENT_ERROR);
+            }
+
+        } else {
+            setVal = 1;
+            set_event(EVENT_10); // Handler 2 Event
+        }
+        SETBIT(UCA0IE, UCRXIE);   // enable rx interrupt
+    }
 }
 
 // ----------------------------------------------------------------------------
 
 LOCAL Void Calculate_Displayed_Value() {
-    LOCAL int currentValue;
-    if (mode)
-    {
-        currentValue += selectedValue;
-    }
-    else
-    {
-        currentValue -= selectedValue;
-    }
-    // handle overflow:
-    if (currentValue GE OVERFLOW)
-    {
-        currentValue -= OVERFLOW;
-    }
-    if (currentValue LT 0)
-    {
-        currentValue += OVERFLOW;
+
+    if(setVal) { // value passed from UART
+        currentValue = selectedValue;
+        clr_error();  // no errors anymore
+        set_event(EVENT_ERROR);
+    } else { // value passed from SPI
+        if (mode)
+        {
+            currentValue += selectedValue;
+        }
+        else
+        {
+            currentValue -= selectedValue;
+        }
+        // handle overflow:
+        if (currentValue GE OVERFLOW)
+        {
+            currentValue -= OVERFLOW;
+        }
+        if (currentValue LT 0)
+        {
+            currentValue += OVERFLOW;
+        }
     }
 
     displayedValue[3] = currentValue / (BASE_POW3);
     displayedValue[2] = (currentValue % (BASE_POW3)) / (BASE_POW2);
     displayedValue[1] = (currentValue % (BASE_POW2)) / BASE;
     displayedValue[0] = currentValue % BASE;
+
+    // set buf values to send from EVAL Board
+    if(!setVal) {  // value has been increased from SPI
+        buf[0] = displayedValue[3] + 48;
+        buf[1] = displayedValue[2] + 48;
+        buf[2] = displayedValue[1] + 48;
+        buf[3] = displayedValue[0] + 48;
+        buf[4] = '\r';
+        buf[5] = '\n';
+        CLRBIT(UCA0IE, UCRXIE);   // disable rx interrupt
+        set_event(EVENT_TXD);
+    }
+
+    setVal = 0;  // reset back to normal
 }
 
 
@@ -216,6 +300,7 @@ LOCAL Void State3(Void) {
     {
         clr_event(EVENT_11);
         state = State0;
+        // TODO: Set Event EVENT_TXD?
     }
     else
     {

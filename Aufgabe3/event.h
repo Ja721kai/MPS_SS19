@@ -35,7 +35,7 @@ typedef unsigned int TEvent;
 #define ALL_EVENTS  0xFFFF
 
 #define EVENT_IMA   EVENT_1  // I am alive
-#define EVENT_BTN1  EVENT_2  // click on button 1
+#define EVENT_INPUT  EVENT_2  // click on button 1
 #define EVENT_BTN2  EVENT_3  // click on button 2
 #define EVENT_BTN3  EVENT_4  // click on button 3
 #define EVENT_BTN4  EVENT_5  // click on button 4
@@ -43,6 +43,16 @@ typedef unsigned int TEvent;
 #define EVENT_BTN6  EVENT_7  // click on button 6
 #define EVENT_DIGI  EVENT_8  // update digital
 #define EVENT_7LED  EVENT_9  // update LEDs
+
+#define EVENT_ERROR EVENT_14 // event for LED error handling
+#define EVENT_RXD   EVENT_15 // Receiver event
+#define EVENT_TXD   EVENT_16 // Transmitter event
+
+#define NO_ERRORS   EVENT_1
+#define BRK_ERROR   EVENT_2
+#define CHAR_ERROR  EVENT_3
+#define BUF_ERROR   EVENT_4
+#define ERR_ERROR   EVENT_5
 
 EXTERN Void wait_for_event(Void);
 EXTERN Bool is_event_error(Void);

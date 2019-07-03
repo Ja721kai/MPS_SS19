@@ -17,8 +17,7 @@ EXTERN Void TA0_Init(Void);
 #define MUSTER3 2
 #define MUSTER4 3
 #define MUSTER5 4
-#define MUSTER6 5
 
-EXTERN Void set_blink_muster(UInt);
+EXTERN Void set_blink_muster();
 
 #endif /* TA0_H_ */

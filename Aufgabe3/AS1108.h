@@ -10,6 +10,8 @@
 #ifndef AS1108_H_
 #define AS1108_H_
 
+//GLOBAL char error_code;
+EXTERN Void set_error(TEvent);
 EXTERN Void SPI_Init(Void);
 EXTERN Void AS1108_Init(Void);
 EXTERN Void Button_Handler(Void);
