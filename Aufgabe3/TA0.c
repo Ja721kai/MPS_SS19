@@ -245,7 +245,7 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 250)
             {
                 counter = 0;
-                __low_power_mode_off_on_exit();
+                //__low_power_mode_off_on_exit();
             }
         }
 
@@ -263,7 +263,7 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 50)
             {
                 counter = 0;
-                __low_power_mode_off_on_exit();
+               // __low_power_mode_off_on_exit();
             }
         }
         break;
@@ -280,7 +280,7 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 250)
             {
                 counter = 0;
-                __low_power_mode_off_on_exit();
+                //__low_power_mode_off_on_exit();
             }
         }
         break;
@@ -307,7 +307,7 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 350)
             {
                 counter = 0;
-                __low_power_mode_off_on_exit();
+                //__low_power_mode_off_on_exit();
             }
         }
         break;
@@ -344,7 +344,7 @@ __interrupt Void TA0_ISR(Void)
             if (counter == 450)
             {
                 counter = 0;
-                __low_power_mode_off_on_exit();
+                //__low_power_mode_off_on_exit();
             }
         }
         break;

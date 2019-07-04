@@ -24,7 +24,8 @@
 typedef Void (* VoidFunc)(Void);
 
 GLOBAL int currentValue;
-LOCAL const Char * ptr;
+LOCAL const Char EndOfTExt = '\0';
+LOCAL const Char * ptr = &EndOfTExt;
 
 //GLOBAL char error_code = 0x01;  // bit-sequence  00001 -> no error
 LOCAL volatile TEvent error_code  = NO_ERRORS;
@@ -165,43 +166,54 @@ GLOBAL Void Button_Handler(Void)
         set_event(EVENT_10); // Handler 2 Event
     }
     //LOCAL Char ch;
-    LOCAL Int factor;
+    LOCAL Int factor = BASE_POW3;
+    LOCAL Int sel_Value = 0;
+    LOCAL Char c;
     if (tst_event(EVENT_INPUT))
     {
-        clr_event(EVENT_INPUT);
-        selectedValue = 0;
-        factor = BASE_POW3;
-        ptr = buf;
-        while (!(factor EQ 0))
-        {
-            ch = *ptr++;
-            if (between(0x30, ch, 0x39))
+        if (*ptr EQ '\0' AND factor EQ BASE_POW3) {
+            ptr = buf;
+        }
+        if (factor NE 0) {
+            c = *ptr++;
+            if (between(0x30, c, 0x39))  // no error yet
             {
-                selectedValue += ((int) ch - 48) * factor;  // TODO: maybe wrong conversion
+                sel_Value += ((int) c - 48) * factor;
                 factor /= BASE;
-            } else {
-                if(ch NE '\0') {
+            } else {  // error case
+                if(c NE '\0') {
                     set_error(CHAR_ERROR); // character error
                     set_event(EVENT_ERROR);
                 } else {
                     set_error(BUF_ERROR); // buffer error, end of text reached too early
                     set_event(EVENT_ERROR);
                 }
-                break;
+                clr_event(EVENT_INPUT);
+                SETBIT(UCA0IE, UCRXIE);   // enable rx interrupt
+                // reset variables
+                factor = BASE_POW3;
+                sel_Value = 0;
+                ptr = &EndOfTExt;
             }
-        }
-        if(!(factor EQ 0 AND *ptr EQ '\0')) {
-            selectedValue = 0;
-            if (*ptr NE '\0') {
-                set_error(BUF_ERROR); // buffer error, end of text not reached because of too many digits
+        } else {  // factor EQ 0
+            if (*ptr EQ '\0') {  // no error
+                selectedValue = sel_Value; // pass value to calculation
+                setVal = 1;
+                buf[4] = '\r';
+                buf[5] = '\n';
+                set_event(EVENT_TXD);
+                set_event(EVENT_10); // Handler 2 Event
+            } else { // error, too many digits
+                set_error(BUF_ERROR); // buffer error
                 set_event(EVENT_ERROR);
             }
-
-        } else {
-            setVal = 1;
-            set_event(EVENT_10); // Handler 2 Event
+            clr_event(EVENT_INPUT);
+            SETBIT(UCA0IE, UCRXIE);   // enable rx interrupt
+            // reset variables:
+            sel_Value = 0;
+            factor = BASE_POW3;
+            ptr = &EndOfTExt;
         }
-        SETBIT(UCA0IE, UCRXIE);   // enable rx interrupt
     }
 }
 
